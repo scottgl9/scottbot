@@ -42,8 +42,8 @@ try:
 except KeyboardInterrupt:
     pass
 
-except Exception as exception_error:
-    print("Error: " + str(exception_error))
+except Exception as e:
+    print("Error: " + str(e))
 
 finally:
     serial_port.close()
