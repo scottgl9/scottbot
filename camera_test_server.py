@@ -7,6 +7,12 @@ import serial
 from flask import Flask, Response, render_template
 from camera_jetson import Camera
 
+global video_frame
+video_frame = None
+
+global thread_lock
+thread_lock = threading.Lock()
+
 GSTREAMER_PIPELINE = 'nvarguscamerasrc ! video/x-raw(memory:NVMM), width=3280, height=2464, format=(string)NV12, framerate=21/1 ! nvvidconv flip-method=0 ! video/x-raw, width=960, height=616, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink wait-on-eos=false max-buffers=1 drop=True'
 
 def gstreamer_pipeline(
@@ -38,30 +44,6 @@ def gstreamer_pipeline(
 
 app = Flask(__name__)
 
-serial_port = serial.Serial(
-    port="/dev/ttyACM0",#"/dev/ttyTHS1",
-    baudrate=9600,
-    bytesize=serial.EIGHTBITS,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_ONE,
-)
-
-def robot_stop():
-    serial_port.write(b'S')
-	#time.sleep(1)
-
-def robot_forward():
-	serial_port.write(b'F')
-
-def robot_backward():
-	serial_port.write(b'B')
-
-def robot_turn_left():
-	serial_port.write(b'L')
-
-def robot_turn_right():
-	serial_port.write(b'R')
-
 @app.route("/")
 def getPage():
 	templateData = {
@@ -71,27 +53,22 @@ def getPage():
 
 @app.route("/stop", methods=['GET', 'POST'])
 def stop():
-	robot_stop()
 	return ('', 204)
 
 @app.route("/forward", methods=['GET', 'POST'])
 def forward():
-	robot_forward()
 	return ('', 204)
 
 @app.route("/backward", methods=['GET', 'POST'])
 def backward():
-	robot_backward()
 	return ('', 204)
 
 @app.route("/turnleft", methods=['GET', 'POST'])
 def turn_left():
-	robot_turn_left()
 	return ('', 204)
 
 @app.route("/turnright", methods=['GET', 'POST'])
 def turn_right():
-	robot_turn_right()
 	return ('', 204)
 
 def gen(camera):
@@ -110,14 +87,10 @@ def video_feed():
 
 if __name__ == "__main__":
 	try:
-		serial_port.write(b'0')
-		time.sleep(1)
-		serial_port.write(b'S')
-		time.sleep(1)
-		app.run(host='0.0.0.0', port=5000, threaded=True, debug=True)
+		app.run(host='0.0.0.0', port=5000, debug=True)
 	except KeyboardInterrupt:
 		pass
 	except Exception as e:
 		print("Error: " + str(e))
 	finally:
-		serial_port.close()
+            pass
